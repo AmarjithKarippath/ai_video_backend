@@ -33,12 +33,20 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Add CORS middleware
+# # Add CORS middleware
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["http://localhost:3000"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["https://console.waveify.ai"],  # Your frontend domain
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],  # Include OPTIONS
     allow_headers=["*"],
 )
 
