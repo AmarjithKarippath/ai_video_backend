@@ -42,13 +42,30 @@ app = FastAPI(
 #     allow_headers=["*"],
 # )
 
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["https://console.waveify.ai"],  # Your frontend domain
+#     allow_credentials=True,
+#     allow_methods=["GET", "POST", "OPTIONS"],  # Include OPTIONS
+#     allow_headers=["*"],
+# )
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://console.waveify.ai"],  # Your frontend domain
+    allow_origins=["*"],  # Temporarily allow all origins
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],  # Include OPTIONS
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def debug_cors(request, call_next):
+    print(f"Request method: {request.method}")
+    print(f"Request headers: {dict(request.headers)}")
+    response = await call_next(request)
+    print(f"Response headers: {dict(response.headers)}")
+    return response
+
 
 # Pydantic models
 class Customer(BaseModel):
