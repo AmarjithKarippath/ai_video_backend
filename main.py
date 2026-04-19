@@ -81,7 +81,28 @@ class CustomerCreate(BaseModel):
 # Root endpoint
 @app.get("/")
 async def root():
-    return {"message": "Welcome to FastAPI Customer Management App"}
+    db = SessionLocal()
+    try:
+        # Get total customers
+        total_customers = db.query(CustomerDB).count()
+        
+        # Get customers grouped by date
+        from sqlalchemy import func, extract
+        customers_by_date = db.query(
+            func.date(CustomerDB.created_at).label('date'),
+            func.count(CustomerDB.id).label('count')
+        ).group_by(func.date(CustomerDB.created_at)).all()
+        
+        # Convert to dictionary format
+        daily_counts = {str(row.date): row.count for row in customers_by_date}
+        
+        return {
+            "total_customers": total_customers,
+            "customers_by_date": daily_counts,
+            "message": "Welcome to FastAPI Customer Management App"
+        }
+    finally:
+        db.close()
 
 # Health check endpoint
 @app.get("/health")
