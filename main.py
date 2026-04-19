@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import List, Optional
 import uvicorn
@@ -96,13 +97,132 @@ async def root():
         # Convert to dictionary format
         daily_counts = {str(row.date): row.count for row in customers_by_date}
         
-        return {
-            "total_customers": total_customers,
-            "customers_by_date": daily_counts,
-            "message": "Welcome to FastAPI Customer Management App"
-        }
+        # Generate HTML table
+        html_table = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Customer Dashboard</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    margin: 40px;
+                    background-color: #f5f5f5;
+                }}
+                .container {{
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background-color: white;
+                    padding: 30px;
+                    border-radius: 10px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }}
+                h1 {{
+                    color: #333;
+                    text-align: center;
+                    margin-bottom: 30px;
+                }}
+                .stats {{
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 30px;
+                }}
+                .stat-box {{
+                    background-color: #007bff;
+                    color: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    text-align: center;
+                    flex: 1;
+                    margin: 0 10px;
+                }}
+                .stat-number {{
+                    font-size: 2em;
+                    font-weight: bold;
+                }}
+                .stat-label {{
+                    font-size: 0.9em;
+                    opacity: 0.9;
+                }}
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 20px;
+                }}
+                th, td {{
+                    padding: 12px;
+                    text-align: left;
+                    border-bottom: 1px solid #ddd;
+                }}
+                th {{
+                    background-color: #f8f9fa;
+                    font-weight: bold;
+                    color: #495057;
+                }}
+                tr:hover {{
+                    background-color: #f5f5f5;
+                }}
+                .no-data {{
+                    text-align: center;
+                    color: #666;
+                    font-style: italic;
+                    padding: 40px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Customer Dashboard</h1>
+                
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-number">{total_customers}</div>
+                        <div class="stat-label">Total Customers</div>
+                    </div>
+                </div>
+                
+                <h2>Daily Subscriptions</h2>
+                {generate_date_table(daily_counts)}
+            </div>
+        </body>
+        </html>
+        """
+        
+        return HTMLResponse(content=html_table)
     finally:
         db.close()
+
+def generate_date_table(daily_counts):
+    if not daily_counts:
+        return '<div class="no-data">No customer data available</div>'
+    
+    # Sort dates in descending order
+    sorted_dates = sorted(daily_counts.keys(), reverse=True)
+    
+    table_rows = ""
+    for date in sorted_dates:
+        table_rows += f"""
+        <tr>
+            <td>{date}</td>
+            <td>{daily_counts[date]}</td>
+        </tr>
+        """
+    
+    return f"""
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>New Customers</th>
+            </tr>
+        </thead>
+        <tbody>
+            {table_rows}
+        </tbody>
+    </table>
+    """
 
 # Health check endpoint
 @app.get("/health")
